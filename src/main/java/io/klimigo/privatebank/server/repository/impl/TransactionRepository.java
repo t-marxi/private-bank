@@ -24,9 +24,9 @@ public class TransactionRepository extends AbstractRepository<TransactionEntity,
     public TransactionEntity save(TransactionEntity entity) {
         EntityTransaction transaction = getEntityManager().getTransaction();
         transaction.begin();
-        getEntityManager().persist(entity);
         getEntityManager().persist(entity.getTo());
         getEntityManager().persist(entity.getFrom());
+        getEntityManager().persist(entity);
         transaction.commit();
         return entity;
     }

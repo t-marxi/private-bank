@@ -27,7 +27,8 @@ public class TransactionController {
 
     @POST
     public Transaction createNew(TransactionApplication transactionApplication) {
-        return transactionService.createNew(transactionApplication);
+        Transaction transaction = transactionService.createNew(transactionApplication);
+        return transaction;
     }
 
     @GET

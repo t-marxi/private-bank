@@ -3,6 +3,7 @@ package io.klimigo.privatebank.server.service.impl;
 import io.klimigo.privatebank.server.dto.FxRate;
 import io.klimigo.privatebank.server.dto.Transaction;
 import io.klimigo.privatebank.server.dto.TransactionApplication;
+import io.klimigo.privatebank.server.entity.AccountEntity;
 import io.klimigo.privatebank.server.entity.TransactionEntity;
 import io.klimigo.privatebank.server.mapper.FxRateMapper;
 import io.klimigo.privatebank.server.mapper.TransactionMapper;
@@ -13,6 +14,7 @@ import io.klimigo.privatebank.server.service.TransactionService;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -41,10 +43,19 @@ public class TransactionServiceImpl implements TransactionService {
     @Override
     public Transaction createNew(TransactionApplication transactionApplication) {
         TransactionEntity entity = transactionMapper.map(transactionApplication);
-        entity.setFrom(accountRepository.find(transactionApplication.getAccountFrom()));
-        entity.setTo(accountRepository.find(transactionApplication.getAccountTo()));
-        entity.setFxRate(fxRateRepository.findLast(transactionApplication.getAccountFrom(), transactionApplication.getAccountTo()));
-        entity.setValueTo(entity.getValueFrom().divide(entity.getFxRate().getValue()));
+        AccountEntity accountFrom = accountRepository.find(transactionApplication.getAccountFrom());
+        if (accountFrom.getValue().compareTo(transactionApplication.getValue()) < 0) {
+            throw new IllegalArgumentException("There is not enough money fro transaction");
+        }
+        accountFrom.setValue(accountFrom.getValue().subtract(transactionApplication.getValue()));
+        AccountEntity accountTo = accountRepository.find(transactionApplication.getAccountTo());
+        entity.setFrom(accountFrom);
+        entity.setTo(accountTo);
+        entity.setFxRate(fxRateRepository.findLast(accountFrom.getCurrency().getId(),
+                accountTo.getCurrency().getId()));
+        BigDecimal valueTo = entity.getValueFrom().divide(entity.getFxRate().getValue());
+        accountTo.setValue(accountTo.getValue().add(valueTo));
+        entity.setValueTo(valueTo);
         entity = transactionRepository.save(entity);
         return transactionMapper.map(entity);
     }
@@ -55,4 +66,5 @@ public class TransactionServiceImpl implements TransactionService {
                 .map(transactionMapper::map)
                 .collect(Collectors.toList());
     }
+
 }

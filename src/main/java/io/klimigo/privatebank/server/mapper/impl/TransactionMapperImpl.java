@@ -26,7 +26,7 @@ public class TransactionMapperImpl implements TransactionMapper {
         dto.setFxRateId(entity.getFxRate().getId());
         dto.setValueFrom(entity.getValueFrom());
         dto.setValueTo(entity.getValueTo());
-        return null;
+        return dto;
     }
 
     @Override
